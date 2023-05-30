@@ -1,0 +1,12 @@
+https://drive.google.com/drive/folders/1rx3NoxDBO_keAqhFjKJUUdB_xiJ09y2G
+
+
+gedit yourfilename.cpp
+g++ yourfilename.cpp -o youroutputfile
+./youroutputfile
+
+
+
+from google.colab import files
+
+uploaded = files. Upload(
