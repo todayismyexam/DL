@@ -1,0 +1,425 @@
+***************** DL 1 hOUSing ********************
+
+import pandas as pd
+import numpy as np
+
+from sklearn.datasets import fetch_california_housing
+boston = fetch_california_housing()
+
+data = pd.DataFrame(boston.data)
+
+data.head()
+
+data.columns = boston.feature_names
+
+data['PRICE'] = boston.target
+
+data.head()
+
+data.isnull().sum()
+
+data.describe()
+
+data.info()
+
+x = data.iloc[:, :-1]
+y = data.PRICE
+
+from sklearn.model_selection import train_test_split
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size = 0.2, random_state = 4)
+
+from sklearn.linear_model import LinearRegression
+regressor = LinearRegression()
+
+regressor.fit(x_train, y_train)
+
+y_pred = regressor.predict(x_test)
+
+from sklearn.metrics import mean_squared_error
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+print(rmse)
+
+from sklearn.preprocessing import StandardScaler
+sc = StandardScaler()
+
+x_train = sc.fit_transform(x_train)
+x_test = sc.transform(x_test)
+
+import keras
+from keras.layers import Activation, Dense, Dropout
+from keras.models import Sequential
+
+model = Sequential()
+model.add(Dense(128, activation='relu', input_dim = 8))
+model.add(Dense(64, activation='relu'))
+model.add(Dense(32, activation='relu'))
+model.add(Dense(16, activation='relu'))
+model.add(Dense(1))
+model.compile(optimizer = 'adam', loss = 'mean_squared_error')
+
+model.fit(x_train, y_train, epochs = 100)
+
+y_pred = model.predict(x_test)
+
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+
+rmse
+
+**************************** DL binary ASSIGNMENT  2a*******************************
+
+from keras.datasets import imdb
+# Load the data, keeping only 10,000 of the most frequently occuring words
+(train_data, train_labels), (test_data, test_labels) = imdb.load_data(num_words = 10000)
+
+# Here is a list of maximum indexes in every review
+print(type([max(sequence) for sequence in train_data]))
+# Find the maximum of all max indexes
+max([max(sequence) for sequence in train_data])
+
+# step 1: load the dictionary mappings from word to integer index
+word_index = imdb.get_word_index()
+# step 2: reverse word index to map integer indexes to their respective words
+reverse_word_index = dict([(value, key) for (key, value) in word_index.items()])
+# Step 3: decode the review, mapping integer indices to words
+#
+# indices are off by 3 because 0, 1, and 2 are reserverd indices for "padding", "Start of
+decoded_review = ' '.join([reverse_word_index.get(i-3, '?') for i in train_data[0]])
+decoded_review
+
+# Vectorize input data
+import numpy as np
+def vectorize_sequences(sequences, dimension=10000):
+    results = np.zeros((len(sequences), dimension)) 
+    for i,sequence in enumerate(sequences):
+      results[i,sequence] = 1 
+    return results
+# Vectorize training Data
+X_train = vectorize_sequences(train_data)
+# Vectorize testing Data
+X_test = vectorize_sequences(test_data)
+
+X_train[0]
+
+X_train.shape
+
+# Vectorize labels
+y_train = np.asarray(train_labels).astype('float32')
+y_test = np.asarray(test_labels).astype('float32')
+
+from keras import models
+from keras import layers
+model = models.Sequential()
+model.add(layers.Dense(16, activation='relu', input_shape=(10000,)))
+model.add(layers.Dense(16, activation='relu'))
+model.add(layers.Dense(1, activation='sigmoid'))
+
+from tensorflow.keras import optimizers
+from tensorflow.keras import losses
+from tensorflow.keras import metrics
+model.compile(optimizer=optimizers.RMSprop(learning_rate=0.001),
+              loss=losses.binary_crossentropy,
+              metrics=[metrics.binary_accuracy])
+
+# Input for Validation
+X_val = X_train[:10000]
+partial_X_train = X_train[10000:]
+# Labels for validation
+y_val = y_train[:10000]
+partial_y_train = y_train[10000:]
+
+history = model.fit(partial_X_train, partial_y_train, epochs=20, batch_size=512, verbose =1, validation_data=(X_val, y_val))
+
+history_dict = history.history
+history_dict.keys()
+
+import matplotlib.pyplot as plt
+%matplotlib inline
+
+# Plotting losses
+loss_values = history_dict['loss']
+val_loss_values = history_dict['val_loss']
+epochs = range(1, len(loss_values) + 1)
+plt.plot(epochs, loss_values, 'bo', label="Training Loss")
+plt.plot(epochs, val_loss_values, 'b', label="Validation Loss")
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss Value')
+plt.legend()
+plt.show()
+
+# Training and Validation Accuracy
+acc_values = history_dict['binary_accuracy']
+val_acc_values = history_dict['val_binary_accuracy']
+epochs = range(1, len(loss_values) + 1)
+plt.plot(epochs, acc_values, 'ro', label="Training Accuracy")
+plt.plot(epochs, val_acc_values, 'r', label="Validation Accuracy")
+plt.title('Training and Validation Accuraccy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+model.fit(partial_X_train, partial_y_train, epochs=3, batch_size=512, validation_data=(X_val, y_val))
+
+# Making Predictions for testing data
+np.set_printoptions(suppress=True)
+result = model.predict(X_test)
+
+result
+
+y_pred = np.zeros(len(result))
+for i, score in enumerate(result):
+    y_pred[i] = 1 if score > 0.5 else 0
+
+from sklearn.metrics import mean_absolute_error
+mae = mean_absolute_error(y_pred, y_test)
+
+# error
+mae
+
+
+**************************************DL Fashion Assignment 3b********************************************
+
+from __future__ import absolute_import, division, print_function
+# TensorFlow and tf.keras
+import tensorflow as tf
+from tensorflow import keras
+# Helper libraries
+import numpy as np
+import matplotlib.pyplot as plt
+
+fashion_mnist = keras.datasets.fashion_mnist
+(train_images, train_labels), (test_images, test_labels) = fashion_mnist.load_data()
+
+class_names = ['T-shirt/top', 'Trouser', 'Pullover', 'Dress', 'Coat',
+'Sandal', 'Shirt', 'Sneaker', 'Bag', 'Ankle boot']
+
+train_images.shape
+
+len(train_labels)
+
+train_labels
+
+test_images.shape
+
+len(test_labels)
+
+plt.figure()
+plt.imshow(train_images[0])
+plt.colorbar()
+plt.grid(False)
+plt.show()
+
+train_images = train_images / 255.0
+test_images = test_images / 255.0
+
+plt.figure(figsize=(10,10))
+for i in range(25):
+    plt.subplot(5,5,i+1)
+    plt.xticks([])
+    plt.yticks([])
+    plt.grid(False)
+    plt.imshow(train_images[i], cmap=plt.cm.binary)
+    plt.xlabel(class_names[train_labels[i]])
+plt.show()
+
+model = keras.Sequential([
+keras.layers.Flatten(input_shape=(28, 28)),
+keras.layers.Dense(128, activation=tf.nn.relu),
+keras.layers.Dense(10, activation=tf.nn.softmax)
+])
+
+model.compile(optimizer='adam',
+loss='sparse_categorical_crossentropy',
+metrics=['accuracy'])
+
+model.fit(train_images, train_labels, epochs=5)
+
+test_loss, test_acc = model.evaluate(test_images, test_labels)
+print('Test accuracy:', test_acc)
+
+predictions = model.predict(test_images)
+
+predictions[0]
+
+np.argmax(predictions[0])
+
+test_labels[0]
+
+def plot_image(i, predictions_array, true_label, img):
+  predictions_array, true_label, img = predictions_array[i], true_label[i], img[i]
+  plt.grid(False)
+  plt.xticks([])
+  plt.yticks([])
+  
+  plt.imshow(img, cmap=plt.cm.binary)
+  
+  predicted_label = np.argmax(predictions_array)
+  if predicted_label == true_label:
+   color = 'blue'
+  else:
+   color = 'red'
+
+  plt.xlabel("{} {:2.0f}% ({})".format(class_names[predicted_label],
+                                      100*np.max(predictions_array),
+                                      class_names[true_label]),
+                                      color=color)
+
+def plot_value_array(i, predictions_array, true_label):
+  predictions_array, true_label = predictions_array[i], true_label[i]
+  plt.grid(False)
+  plt.xticks([])
+  plt.yticks([])
+  thisplot = plt.bar(range(10), predictions_array, color="#777777")
+  plt.ylim([0, 1])
+  predicted_label = np.argmax(predictions_array)
+  
+  thisplot[predicted_label].set_color('red')
+  thisplot[true_label].set_color('blue')
+
+i = 0
+plt.figure(figsize=(6,3))
+plt.subplot(1,2,1)
+plot_image(i, predictions, test_labels, test_images)
+plt.subplot(1,2,2)
+plot_value_array(i, predictions, test_labels)
+plt.show()
+
+i = 12
+plt.figure(figsize=(6,3))
+plt.subplot(1,2,1)
+plot_image(i, predictions, test_labels, test_images)
+plt.subplot(1,2,2)
+plot_value_array(i, predictions, test_labels)
+plt.show()
+
+# Plot the first X test images, their predicted label, and the true label
+# Color correct predictions in blue, incorrect predictions in red
+num_rows = 5
+num_cols = 3
+num_images = num_rows*num_cols
+plt.figure(figsize=(2*2*num_cols, 2*num_rows))
+for i in range(num_images):
+   plt.subplot(num_rows, 2*num_cols, 2*i+1)
+   plot_image(i, predictions, test_labels, test_images)
+   plt.subplot(num_rows, 2*num_cols, 2*i+2)
+   plot_value_array(i, predictions, test_labels)
+plt.show() 
+
+# Grab an image from the test dataset
+img = test_images[0]
+print(img.shape)
+
+# Add the image to a batch where it's the only member.
+img = (np.expand_dims(img,0))
+print(img.shape)
+
+predictions_single = model.predict(img)
+print(predictions_single)
+
+plot_value_array(0, predictions_single, test_labels)
+_ = plt.xticks(range(10), class_names, rotation=45)
+
+np.argmax(predictions_single[0])
+
+******************DL Assignment 4******************************************************************
+
+from google.colab import drive
+drive.mount('/content/drive')
+
+
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt 
+from sklearn.preprocessing import MinMaxScaler
+from keras.models import Sequential
+from keras.layers import Dense,LSTM,Dropout
+
+import pandas as pd
+path="/content/drive/MyDrive/datasets_LP5/Google_train_data.csv"
+data = pd.read_csv(path)
+data.head()
+
+data.info()
+
+data["Close"]=pd.to_numeric(data.Close,errors='coerce')
+data = data.dropna()
+trainData = data.iloc[:,4:5].values
+
+data.info()
+
+sc = MinMaxScaler(feature_range=(0,1))
+trainData = sc.fit_transform(trainData)
+trainData.shape
+
+X_train = []
+y_train = []
+
+for i in range (60,1149): #60 : timestep // 1149 : length of the data
+    X_train.append(trainData[i-60:i,0]) 
+    y_train.append(trainData[i,0])
+
+X_train,y_train = np.array(X_train),np.array(y_train)
+
+X_train = np.reshape(X_train,(X_train.shape[0],X_train.shape[1],1)) #adding the batch_size axis
+X_train.shape
+
+model = Sequential()
+
+model.add(LSTM(units=100, return_sequences = True, input_shape =(X_train.shape[1],1)))
+model.add(Dropout(0.2))
+
+model.add(LSTM(units=100, return_sequences = True))
+model.add(Dropout(0.2))
+
+model.add(LSTM(units=100, return_sequences = True))
+model.add(Dropout(0.2))
+
+model.add(LSTM(units=100, return_sequences = False))
+model.add(Dropout(0.2))
+
+model.add(Dense(units =1))
+model.compile(optimizer='adam',loss="mean_squared_error")
+
+hist = model.fit(X_train, y_train, epochs = 20, batch_size = 32, verbose=2)
+
+plt.plot(hist.history['loss'])
+plt.title('Training model loss')
+plt.ylabel('loss')
+plt.xlabel('epoch')
+plt.legend(['train'], loc='upper left')
+plt.show()
+
+testData = pd.read_csv('/content/drive/MyDrive/datasets_LP5/Google_test_data.csv')
+testData["Close"]=pd.to_numeric(testData.Close,errors='coerce')
+testData = testData.dropna()
+testData = testData.iloc[:,4:5]
+y_test = testData.iloc[60:,0:].values 
+#input array for the model
+inputClosing = testData.iloc[:,0:].values 
+inputClosing_scaled = sc.transform(inputClosing)
+inputClosing_scaled.shape
+X_test = []
+length = len(testData)
+timestep = 60
+for i in range(timestep,length):  
+    X_test.append(inputClosing_scaled[i-timestep:i,0])
+X_test = np.array(X_test)
+X_test = np.reshape(X_test,(X_test.shape[0],X_test.shape[1],1))
+X_test.shape
+
+y_pred = model.predict(X_test)
+import pandas as pd
+df = pd.DataFrame(y_pred, columns = ['Predicted stock Value'])
+print(df)
+
+predicted_price = sc.inverse_transform(y_pred)
+
+plt.plot(y_test, color = 'red', label = 'Actual Stock Price')
+plt.plot(predicted_price, color = 'green', label = 'Predicted Stock Price')
+plt.title('Google stock price prediction')
+plt.xlabel('Time')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
+
